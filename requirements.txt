@@ -6,7 +6,7 @@ google-auth-oauthlib==0.5.2
 #gpg==1.18.0
 gspread==5.4.0
 idna==3.3
-notmuch==0.37
+#notmuch==0.37
 oauthlib==3.2.0
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
