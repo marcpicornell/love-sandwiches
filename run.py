@@ -17,7 +17,112 @@ SCOPED_CREDS = CREDS.with_scopes(SCOPE)
 GSPREAD_CLIENT = gspread.authorize(SCOPED_CREDS)
 SHEET = GSPREAD_CLIENT.open('love_sandwiches')
 
-sales = SHEET.worksheet('sales')
+def get_sales_data():
+    '''
+    Get sales figures from the user
+    '''
+    while True:
+        print("Data should be six numbers,")
+        print("Example: 10, 20, 30, 40, 50, 60\n")
 
-data = sales.get_all_values()
-print(data)
+        data_str = input("Enter your data here: \n")
+        sales_data = data_str.split(",")
+        validate_data(sales_data)
+    
+        if validate_data(sales_data):
+            print("Data is valid!")
+            break
+
+    return sales_data
+
+def validate_data(values):
+    '''
+    Validate the data using a TRY statement who will convert all the string values to integers.
+    Raise ValueError if cannot be converted or if there less or more than 6 values.
+    '''
+    try:
+        [int(value) for value in values]
+        if len(values) != 6:
+            raise ValueError(
+                f"Exactly 6 values required, you provided {len(values)}"
+            )
+
+    except ValueError as e:
+        print(f"Invalid data: {e}, please try again.\n")
+        return False
+    
+    return True
+
+
+def update_worksheet(data, worksheet):
+    '''
+    Update worksheet
+    '''
+    print(f"Updating {worksheet}!\n")
+    worksheet_to_update = SHEET.worksheet(worksheet)
+    worksheet_to_update.append_row(data)
+    print(f"{worksheet} worksheet update sucessfully!\n")
+
+
+def calculate_surplus_data(sales_row):
+    '''
+    Compare sales with stock and calculate the surplus for each item.
+        - Positive 
+    '''
+    print("Calculating!")
+    stock = SHEET.worksheet("stock").get_all_values()
+    stock_row = stock[-1]
+
+    surplus_data = []
+
+    for stock, sales in zip(stock_row, sales_row):
+        surplus = int(stock) - sales
+        surplus_data.append(surplus)
+    
+    return surplus_data
+
+def get_last_5_entries_sales():
+    '''
+    Get the last 5 entries to calculate the average
+    '''
+    sales = SHEET.worksheet("sales")
+    #column = sales.col_values(3)
+    #print(column)
+    columns = []
+    for ind in range(1,7):
+        column = sales.col_values(ind)
+        columns.append(column[-5:])
+
+    return columns
+
+def calculate_stock_data(data):
+    '''
+    Calculate required stock (average of last 5 + 10%)
+    '''
+    print("Calculating stock data!\n")
+    new_stock_data = []
+
+    for column in data:
+        int_column = [int(num) for num in column]
+        average = sum(int_column) / len(int_column)
+        stock_num = average * 1.1
+        new_stock_data.append(round(stock_num))
+
+    return new_stock_data
+
+
+def main():
+    '''
+    Run all functions
+    '''    
+    data = get_sales_data()
+    sales_data = [int(num) for num in data]
+    update_worksheet(sales_data, "sales")
+    new_surplus_data = calculate_surplus_data(sales_data)
+    update_worksheet(new_surplus_data, "surplus")
+    sales_column = get_last_5_entries_sales()
+    stock_data = calculate_stock_data(sales_column)
+    update_worksheet(stock_data, "stock")
+
+print("Welcome to Love Sandwiches DATA Automation!")
+main()
